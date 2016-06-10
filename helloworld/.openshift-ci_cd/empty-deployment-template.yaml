@@ -1,0 +1,66 @@
+kind: Template
+apiVersion: v1
+parameters:
+- name: APP_NAME
+  displayName: "Application name"
+  description: "Name of your application"
+  required: true
+- name: "SERVICE_URL"
+  displayName: "Service URL"
+  description: ""
+  value: ""
+objects:
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: "${APP_NAME}"
+    labels:
+      app: "${APP_NAME}"
+    annotations:
+      description: "The web server's http port."
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 8080
+    selector:
+      deploymentConfig: "${APP_NAME}"
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: "${APP_NAME}"
+    labels:
+      app: "${APP_NAME}"
+    annotations:
+      description: "Route for application's http service."
+  spec:
+    host: "${SERVICE_URL}"
+    path: /jboss-helloworld/
+    to:
+      kind: Service
+      name: "${APP_NAME}"
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: "${APP_NAME}"
+    labels:
+      app: "${APP_NAME}"
+  spec:
+    strategy:
+      type: Recreate
+    replicas: 1
+    selector:
+      deploymentConfig: "${APP_NAME}"
+    triggers: {}
+    template:
+      metadata:
+        name: "${APP_NAME}"
+        labels:
+          app: "${APP_NAME}"
+          deploymentConfig: "${APP_NAME}"
+      spec:
+        containers:
+        - name: "${APP_NAME}"
+          image: " " 
+          resources:
+            limits:
+              memory: "1Mi"
