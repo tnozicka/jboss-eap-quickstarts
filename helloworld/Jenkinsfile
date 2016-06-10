@@ -1,0 +1,47 @@
+#!/usr/bin/groovy
+node('redhatdistortion-maven') {
+    stage 'Checkout'
+//    git url: 'https://github.com/jboss-developer/jboss-eap-quickstarts.git', branch: '7.1.x-develop'
+    checkout scm
+
+    stage 'Build'
+    sh 'cd helloworld && mvn clean compile'
+
+    stage 'Run Unit Tests'
+    sh 'cd helloworld && mvn test'
+
+    stage 'Package'
+    sh 'cd helloworld && mvn package'
+
+    stage 'Archive artifact'
+    archive 'helloworld/target/*.war'
+
+    stage 'Download oc tool'
+    sh 'curl -L https://github.com/openshift/origin/releases/download/v1.2.0/openshift-origin-client-tools-v1.2.0-2e62fab-linux-64bit.tar.gz ' +
+       '| tar -f - -x -z --strip-components=1 -C ./ openshift-origin-client-tools-v1.2.0-2e62fab-linux-64bit/oc'
+
+    stage 'Create Image'
+    sh './oc login https://kubernetes.default/ -u openshift-dev -p devel --insecure-skip-tls-verify=true'
+    sh './oc project helloworld-dev || ./oc new-project helloworld-dev'
+    sh './oc process -f https://github.com/tnozicka/openshift-templates/raw/master/binary-build-template.yaml ' +
+       '-v "APP_NAME=helloworld,BUILDER_IMAGE=registry.access.redhat.com/jboss-eap-7/eap70-openshift,OUTPUT_IMAGESTREAM_TAG=helloworld:latest" ' +
+       '| ./oc apply -f -'
+    sh './oc delete builds -l buildconfig=helloworld'
+    sh 'mkdir -p ../artifacts/deployments/ && cp helloworld/target/*.war ../artifacts/deployments/'
+    sh './oc get builds && ./oc start-build helloworld --from-dir=../artifacts/ --follow'
+
+    stage 'Deploy to dev'
+    sh './oc process -f helloworld/deployment-template.yaml -v "APP_NAME=helloworld-dev,IMAGE_STREAM_NAMESPACE=helloworld-dev,IMAGE_STREAM_TAG=helloworld:latest" ' +
+       '| ./oc apply -f -'
+
+    stage 'Deploy to test'
+    sh './oc process -f helloworld/deployment-template.yaml -v "APP_NAME=helloworld-test,IMAGE_STREAM_NAMESPACE=helloworld-dev,IMAGE_STREAM_TAG=helloworld:latest" ' +
+       '| ./oc apply -f -'
+
+    stage 'Deploy to production'
+    sh './oc policy add-role-to-user system:image-puller system:serviceaccount:helloworld-prod:default --namespace=helloworld-dev'
+    sh './oc project helloworld-prod || ./oc new-project helloworld-prod'
+    input 'Confirm deploying to production.'
+    sh './oc process -f helloworld/deployment-template.yaml -v "APP_NAME=helloworld,IMAGE_STREAM_NAMESPACE=helloworld-dev,IMAGE_STREAM_TAG=helloworld:latest" ' +
+       '| ./oc apply -f -'
+}
