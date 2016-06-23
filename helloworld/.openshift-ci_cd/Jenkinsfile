@@ -14,6 +14,7 @@ node('redhatdistortion-maven') {
     stage 'Openshift login'
     sh "oc login https://kubernetes.default/ --token=${k8s_token} --certificate-authority=/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 //  Prepare the deployments so you can see pipeline in console overview when running for the first time
+    sh 'oc delete route helloworld-dev || true'  // Bugfix for https://github.com/openshift/origin/pull/9425 not getting into latest OpenShift release
     sh 'oc process -f helloworld/.openshift-ci_cd/empty-deployment-template.yaml -v "APP_NAME=helloworld-dev" | oc apply -f -'
 //    sh 'oc process -f helloworld/.openshift-ci_cd/empty-deployment-template.yaml -v "APP_NAME=helloworld-test" | oc apply -f -'
 //    sh 'oc process -f helloworld/.openshift-ci_cd/empty-deployment-template.yaml -v "APP_NAME=helloworld-prod" | oc apply -f -'
@@ -37,6 +38,7 @@ node('redhatdistortion-maven') {
     sh 'oc start-build helloworld --from-dir=../artifacts/ --follow'
 
     stage 'Deploy to dev'
+    sh 'oc delete route helloworld-dev || true'  // Bugfix for https://github.com/openshift/origin/pull/9425 not getting into latest OpenShift release
     sh "oc process -f helloworld/.openshift-ci_cd/deployment-template.yaml -v 'APP_NAME=helloworld-dev,IMAGE_STREAM_NAMESPACE=${k8s_namespace},IMAGE_STREAM_TAG=helloworld:latest' | oc apply -f -"
 
 //    stage 'Deploy to test'
