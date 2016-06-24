@@ -11,7 +11,6 @@ node('redhatdistortion-maven') {
     stage 'Checkout SCM'
     checkout scm
 
-    stage 'Openshift login'
     sh "oc login https://kubernetes.default/ --token=${k8s_token} --certificate-authority=/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 //  Prepare the deployments so you can see pipeline in console overview when running for the first time
     sh 'oc delete route helloworld-dev || true'  // Bugfix for https://github.com/openshift/origin/pull/9425 not getting into latest OpenShift release
