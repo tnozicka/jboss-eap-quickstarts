@@ -13,10 +13,8 @@ node('redhatdistortion-maven') {
 
     sh "oc login https://kubernetes.default/ --token=${k8s_token} --certificate-authority=/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 //  Prepare the deployments so you can see pipeline in console overview when running for the first time
-    sh 'oc delete route helloworld-dev || true'  // Bugfix for https://github.com/openshift/origin/pull/9425 not getting into latest OpenShift release
-    sh 'oc process -f helloworld/.openshift-ci_cd/empty-deployment-template.yaml -v "APP_NAME=helloworld-dev" | oc apply -f -'
-//    sh 'oc process -f helloworld/.openshift-ci_cd/empty-deployment-template.yaml -v "APP_NAME=helloworld-test" | oc apply -f -'
-//    sh 'oc process -f helloworld/.openshift-ci_cd/empty-deployment-template.yaml -v "APP_NAME=helloworld-prod" | oc apply -f -'
+//  Deleting route first is a bugfix for https://github.com/openshift/origin/pull/9425 not getting into latest OpenShift release
+    sh 'template=$(oc process -f helloworld/.openshift-ci_cd/empty-deployment-template.yaml -v "APP_NAME=helloworld-dev") && (echo ${template} | oc get -f - 1>/dev/null 2>&1) || ((oc delete route helloworld-dev 1>/dev/null 2>&1 || true) && echo ${template} | oc apply -f -)'
 
     stage 'Build'
     sh 'cd helloworld && mvn clean compile'
