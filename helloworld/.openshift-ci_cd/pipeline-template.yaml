@@ -13,6 +13,9 @@ parameters:
   displayName: "Git Reference"
   description: "Git reference. (branch, ...)"
   value: "master"
+- name: "GITHUB_WEBHOOK_SECRET"
+  displayName: "GitHub Webhook secret"
+  value: "kontinu8"
 objects:
 - kind: BuildConfig
   apiVersion: v1
@@ -25,6 +28,9 @@ objects:
   spec:
     triggers:
       - type: ConfigChange
+      - type: GitHub
+        github:
+          secret: "${GITHUB_WEBHOOK_SECRET}"
     strategy:
       type: JenkinsPipeline
       jenkinsPipelineStrategy:
