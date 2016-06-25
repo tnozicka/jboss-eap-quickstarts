@@ -27,7 +27,7 @@ objects:
       pipeline.alpha.openshift.io/uses: '[{"name": "helloworld-dev", "namespace": "", "kind": "DeploymentConfig"},{"name": "helloworld-test", "namespace": "", "kind": "DeploymentConfig"},{"name": "helloworld-prod", "namespace": "", "kind": "DeploymentConfig"}]'
   spec:
     triggers:
-      - type: ConfigChange
+#      - type: ConfigChange
       - type: GitHub
         github:
           secret: "${GITHUB_WEBHOOK_SECRET}"
