@@ -37,6 +37,7 @@ node('redhatdistortion-maven') {
     stage 'Deploy to dev'
     sh 'oc delete route helloworld-dev || true'  // Bugfix for https://github.com/openshift/origin/pull/9425 not getting into latest OpenShift release
     sh "oc process -f helloworld/.openshift-ci_cd/deployment-template.yaml -v 'APP_NAME=helloworld-dev,IMAGE_STREAM_NAMESPACE=${k8s_namespace},IMAGE_STREAM_TAG=helloworld:latest' | oc apply -f -"
+    sh 'oc annotate is helloworld misc_$(date +%s)=foo || true'  // Hack for 0-2 minute pause caused by https://github.com/openshift/origin/issues/9018
 
 //    stage 'Deploy to test'
 //    input 'Confirm deploying to test.'
