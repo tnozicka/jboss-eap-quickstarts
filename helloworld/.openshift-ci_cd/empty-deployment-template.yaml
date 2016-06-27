@@ -64,3 +64,7 @@ objects:
           resources:
             limits:
               memory: "1Mi"
+          livenessProbe:
+            exec:
+              command:
+              - "return true"
