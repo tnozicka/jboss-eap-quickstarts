@@ -13,8 +13,7 @@ node('maven') {
 
     sh "oc login https://kubernetes.default/ --token=${k8s_token} --certificate-authority=/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 //  Prepare the deployments so you can see pipeline in console overview when running for the first time
-//  Deleting route first is a bugfix for https://github.com/openshift/origin/pull/9425 not getting into latest OpenShift release
-    sh 'template=$(oc process -f helloworld/.openshift-ci_cd/empty-deployment-template.yaml -v "APP_NAME=helloworld-dev") && (echo ${template} | oc get -f - 1>/dev/null 2>&1) || ((oc delete route helloworld-dev 1>/dev/null 2>&1 || true) && echo ${template} | oc apply -f -)'
+    sh 'oc process -f helloworld/.openshift-ci_cd/empty-deployment-template.yaml -v "APP_NAME=helloworld-dev" | oc apply -f -'
 
     stage 'Build'
     sh 'cd helloworld && mvn clean compile'
@@ -29,13 +28,11 @@ node('maven') {
     archive 'helloworld/target/*.war'
 
     stage 'Create Image'
-    sh 'oc delete bc helloworld || true'  // Bugfix for https://github.com/openshift/origin/issues/9301
     sh 'oc process -f https://github.com/tnozicka/openshift-templates/raw/master/binary-build-template.yaml -v "APP_NAME=helloworld,BUILDER_IMAGE=registry.access.redhat.com/jboss-eap-7/eap70-openshift,OUTPUT_IMAGESTREAM_TAG=helloworld:latest" | oc apply -f -'
     sh 'mkdir -p ../artifacts/deployments/ && cp helloworld/target/*.war ../artifacts/deployments/'
     sh 'oc start-build helloworld --from-dir=../artifacts/ --follow'
 
     stage 'Deploy to dev'
-    sh 'oc delete route helloworld-dev || true'  // Bugfix for https://github.com/openshift/origin/pull/9425 not getting into latest OpenShift release
     sh "oc process -f helloworld/.openshift-ci_cd/deployment-template.yaml -v 'APP_NAME=helloworld-dev,IMAGE_STREAM_NAMESPACE=${k8s_namespace},IMAGE_STREAM_TAG=helloworld:latest' | oc apply -f -"
     sh 'oc annotate is helloworld misc_$(date +%s)=foo || true'  // Hack for 0-2 minute pause caused by https://github.com/openshift/origin/issues/9018
 
