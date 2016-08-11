@@ -22,9 +22,9 @@ objects:
   metadata:
     name: helloworld-pipeline
     labels:
-      application: helloworld
+      app: helloworld
     annotations:
-      pipeline.alpha.openshift.io/uses: '[{"name": "helloworld-dev", "namespace": "", "kind": "DeploymentConfig"},{"name": "helloworld-test", "namespace": "", "kind": "DeploymentConfig"},{"name": "helloworld-prod", "namespace": "", "kind": "DeploymentConfig"}]'
+      pipeline.alpha.openshift.io/uses: '[{"name": "helloworld", "namespace": "", "kind": "DeploymentConfig"}]'
   spec:
     triggers:
 #      - type: ConfigChange
